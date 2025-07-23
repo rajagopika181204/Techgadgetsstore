@@ -83,7 +83,7 @@ const BuyNowPage = () => {
 
       try {
         const response = await axios.get(
-          `http://localhost:5000/api/address/${user.email}`
+          `http://13.60.50.211/api/address/${user.email}`
         );
 
         if (response.data.success) {
@@ -133,7 +133,7 @@ const BuyNowPage = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/save-address",
+        "http://13.60.50.211/api/save-address",
         userDetails
       );
 
@@ -151,7 +151,7 @@ const BuyNowPage = () => {
   const handleGenerateUPI = async () => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/generate-upi-link",
+        "http://13.60.50.211/api/generate-upi-link",
         { amount: calculatedTotal, orderId: `ORDER_${Date.now()}` }
       );
       setUpiPayment({
@@ -246,7 +246,7 @@ const BuyNowPage = () => {
       const transactionId =
         userDetails.paymentMethod === "upi" || "razorpay" ? `TXN${Date.now()}` : null;
 
-      const response = await axios.post("http://localhost:5000/api/orders", {
+      const response = await axios.post("http://13.60.50.211/api/orders", {
         items,
         userDetails,
         total: calculatedTotal,
@@ -255,7 +255,7 @@ const BuyNowPage = () => {
       });
 
       if (response.data && response.data.orderId) {
-  toast.success("Order placed successfully!");
+      toast.success("Order placed successfully!");
 
   // Delay navigation to let the toast display
   setTimeout(() => {
@@ -281,7 +281,11 @@ const BuyNowPage = () => {
 
   return (
     <>
-    <div className="font-sans bg-pink-50 min-h-screen pb-12">
+    <div
+  className="font-sans bg-cover bg-center bg-no-repeat min-h-screen pb-12"
+  style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
+>
+
       <Navbar onBack={() => navigate(-1)} />
         <ToastContainer />
       <div className="py-10 px-6 max-w-4xl mx-auto">
@@ -292,8 +296,8 @@ const BuyNowPage = () => {
           
           {items.map((item, index) => (
      <div key={index} className="flex items-center gap-4 mb-4 bg-white p-3 rounded-lg shadow-md">
-      <img
-      src={`http://localhost:3000/images/${item.product.image_url}`}
+    <img
+      src={`/images/${item.product.image_url}`}
       alt={item.product.name}
       className="w-20 h-20 object-cover rounded"
     />

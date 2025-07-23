@@ -14,7 +14,7 @@ function Signup() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/signup", {
+      const res = await axios.post("http://13.60.50.211/signup", {
         username,
         email,
         password,
@@ -45,7 +45,12 @@ function Signup() {
   };
 
   return (
-    <div className="font-sans bg-gradient-to-br from-pink-50 via-pink-100 to-pink-200 min-h-screen flex items-center justify-center">
+    
+    <div
+  className="font-sans min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center"
+  style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
+>
+
       {/* Toast Container */}
       <ToastContainer />
       <div className="bg-white shadow-2xl rounded-2xl w-full max-w-lg p-10">

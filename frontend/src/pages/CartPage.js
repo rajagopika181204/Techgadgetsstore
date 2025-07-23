@@ -47,7 +47,11 @@ function CartPage() {
   };
 
   return (
-    <div className="font-sans bg-gradient-to-r from-pink-50 via-white to-pink-50 min-h-screen pb-12">
+    <div
+  className="font-sans bg-cover bg-center bg-no-repeat min-h-screen pb-12"
+  style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
+>
+
       <ToastContainer />
       {/* Responsive Navbar */}
       <nav className="bg-pink-600 text-white py-4 px-6 shadow-lg fixed top-0 left-0 w-full z-50">
@@ -117,7 +121,7 @@ function CartPage() {
                   className="flex flex-col items-center border border-gray-200 rounded-lg p-4 gap-4 shadow-lg transform hover:scale-105 transition-transform duration-300"
                 >
                   <img
-                    src={`http://localhost:3000/images/${item.product.image_url}`}
+                    src={`/images/${item.product.image_url}`}
                     alt={item.product.name}
                     className="w-48 h-48 object-cover rounded-xl"
                   />

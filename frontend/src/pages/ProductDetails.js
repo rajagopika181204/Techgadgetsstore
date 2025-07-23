@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
+import { UserContext } from "../context/UserContext";
 import axios from "axios";
 import {
   FaArrowLeft,
@@ -20,6 +21,7 @@ function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { addToCart } = useContext(CartContext);
+  const { user } = useContext(UserContext); // 👈 for login check
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
@@ -28,7 +30,7 @@ function ProductDetails() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    axios.get("http://localhost:5000/products").then((res) => {
+    axios.get("http://13.60.50.211/products").then((res) => {
       const found = res.data.find((p) => p.id === parseInt(id));
       setProduct(found);
       setRecommendedProducts(
@@ -37,7 +39,7 @@ function ProductDetails() {
     });
 
     axios
-      .get(`http://localhost:5000/reviews/${id}`)
+      .get(`http://13.60.50.211/reviews/${id}`)
       .then((res) => setReviews(res.data))
       .catch((err) => console.error(err));
   }, [id]);
@@ -63,7 +65,7 @@ function ProductDetails() {
         date: new Date().toISOString(),
       };
       axios
-        .post("http://localhost:5000/reviews", review)
+        .post("http://13.60.50.211/reviews", review)
         .then((res) => {
           setReviews([...reviews, res.data]);
           setNewReview("");
@@ -73,10 +75,31 @@ function ProductDetails() {
     }
   };
 
+  const handleBuyNow = () => {
+    if (!user) {
+      localStorage.setItem(
+        "buyNowRedirect",
+        JSON.stringify({
+          product,
+          quantity: parseInt(quantity),
+        })
+      );
+      toast.info("Please login to continue purchase");
+      navigate("/login");
+    } else {
+      navigate("/buy-now", {
+        state: { product, quantity: parseInt(quantity) },
+      });
+    }
+  };
+
   if (!product) return <div className="p-6 text-center">Loading...</div>;
 
   return (
-    <div className="font-sans bg-gradient-to-r from-pink-50 via-white to-pink-50 min-h-screen flex flex-col">
+     <div
+      className="font-sans bg-cover bg-center bg-no-repeat min-h-screen flex flex-col"
+      style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
+    >
       <ToastContainer />
 
       {/* Navbar */}
@@ -142,7 +165,7 @@ function ProductDetails() {
         <div className="flex flex-col lg:flex-row bg-gray-100 p-6 rounded-lg shadow-lg">
           <div className="flex-1 mb-6 lg:mb-0 text-center">
             <img
-              src={`http://localhost:3000/images/${product.image_url}`}
+              src={`/images/${product.image_url}`}
               alt={product.name}
               className="w-full h-auto rounded-lg cursor-pointer"
               onClick={() => setIsModalOpen(true)}
@@ -211,11 +234,7 @@ function ProductDetails() {
               </button>
               <button
                 className="px-6 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600 transition"
-                onClick={() =>
-                  navigate("/buy-now", {
-                    state: { product, quantity: parseInt(quantity) },
-                  })
-                }
+                onClick={handleBuyNow}
               >
                 Buy Now
               </button>
@@ -272,7 +291,7 @@ function ProductDetails() {
                 className="bg-gray-100 p-4 rounded-lg shadow hover:shadow-lg transition"
               >
                 <img
-                  src={`http://localhost:3000/images/${recProduct.image_url}`}
+                  src={`/images/${recProduct.image_url}`}
                   alt={recProduct.name}
                   className="w-full h-40 object-cover rounded-lg mb-4 cursor-pointer"
                   onClick={() => navigate(`/products/${recProduct.id}`)}
@@ -292,7 +311,7 @@ function ProductDetails() {
           onClick={() => setIsModalOpen(false)}
         >
           <img
-            src={`http://localhost:3000/images/${product.image_url}`}
+            src={`/images/${product.image_url}`}
             alt={product.name}
             className="max-w-full max-h-full rounded-lg"
           />

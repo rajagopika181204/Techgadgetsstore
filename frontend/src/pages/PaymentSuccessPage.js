@@ -50,7 +50,11 @@ const PaymentSuccessPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-pink-50 flex items-center justify-center">
+  <div
+  className="font-sans min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center"
+  style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
+>
+
       <div className="bg-white max-w-lg w-full rounded-2xl shadow-2xl p-8">
         <div className="text-center mb-8">
           <FaCheckCircle className="text-green-700 mx-auto text-6xl" />

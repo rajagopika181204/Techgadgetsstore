@@ -22,7 +22,7 @@ const Profile = () => {
     const fetchOrders = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5000/api/order?email=${user?.email}`
+          `http://13.60.50.211/api/order?email=${user?.email}`
         );
         const data = await response.json();
         setOrders(data);
@@ -46,7 +46,11 @@ const Profile = () => {
   if (!user) return null;
 
   return (
-    <div className="font-sans bg-pink-50 min-h-screen py-8 px-4">
+    <div
+  className="font-sans bg-cover bg-center bg-no-repeat min-h-screen pb-12"
+  style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
+>
+
       <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">

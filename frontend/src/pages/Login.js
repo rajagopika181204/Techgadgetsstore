@@ -15,12 +15,12 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:5000/login", {
+      const res = await axios.post("http://13.60.50.211/login", {
         email,
         password,
       });
-      const { user } = res.data; // Assume server sends user info
-      setUser(user); // Update global user state
+      const { user } = res.data;
+      setUser(user);
 
       toast.success("Login successful!", {
         position: "top-right",
@@ -31,9 +31,16 @@ function Login() {
         draggable: true,
       });
 
+      const buyNowData = localStorage.getItem("buyNowRedirect");
       setTimeout(() => {
-        navigate("/products");
-      }, 3000); // Delay navigation to let the toast display
+        if (buyNowData) {
+          const parsed = JSON.parse(buyNowData);
+          localStorage.removeItem("buyNowRedirect");
+          navigate("/buy-now", { state: parsed });
+        } else {
+          navigate("/products");
+        }
+      }, 3000);
     } catch (err) {
       toast.error(err.response?.data?.error || "Login failed", {
         position: "top-right",
@@ -47,16 +54,24 @@ function Login() {
   };
 
   return (
-    <div className="font-sans bg-gradient-to-br from-pink-50 via-pink-100 to-pink-200 min-h-screen flex items-center justify-center">
-      {/* Toast Container */}
+   <div
+  className="font-sans min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center"
+  style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
+>
+
+
       <ToastContainer />
+
+      {/* Fixed Top-Left Home Button */}
+      <button
+        className="fixed top-6 left-6 text-pink-600 text-2xl hover:text-pink-700 transition"
+        onClick={() => navigate("/")}
+      >
+        <FaHome className="inline-block mr-2" /> Home
+      </button>
+
+      {/* Login Card */}
       <div className="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-lg">
-        <button
-          className="absolute top-8 left-8 text-pink-600 text-2xl hover:text-pink-700 transition"
-          onClick={() => navigate("/")}
-        >
-          <FaHome className="inline-block mr-2" /> Home
-        </button>
         <div className="text-center mb-8">
           <h1 className="text-4xl font-extrabold text-pink-700">
             <FaUserAlt className="inline-block mr-3" /> TechGadget Store

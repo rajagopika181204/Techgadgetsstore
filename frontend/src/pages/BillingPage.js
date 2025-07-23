@@ -83,7 +83,11 @@ const BillingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-pink-50 py-10">
+    <div
+  className="font-sans bg-cover bg-center bg-no-repeat min-h-screen pb-12"
+  style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
+>
+
       <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
         <h1 className="text-center text-3xl font-bold text-pink-700 mb-6">
           Billing Details <FaFileInvoice className="inline-block ml-2" />
