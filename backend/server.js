@@ -11,12 +11,12 @@ const app = express();
 const PORT = 5000;
 const JWT_SECRET = '123!@#';
 
-// Middlewares
 app.use(cors({
-  origin: 'http://localhost:3000',
-  methods: ['GET', 'POST', 'OPTIONS'],
+  origin: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true
-}));// Adjust for production
+}));
+// Adjust for production
 app.use(express.json());
 app.use('/images', express.static('images')); // Serving static images
 
