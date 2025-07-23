@@ -8,8 +8,7 @@
 # testing
 /coverage
 
-# Ignore frontend folder
-frontend/
+
 
 # misc
 .DS_Store
