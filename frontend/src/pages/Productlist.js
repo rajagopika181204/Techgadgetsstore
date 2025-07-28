@@ -8,9 +8,34 @@ import {
   FaUser,
   FaShoppingCart,
   FaInfo,
-
 } from "react-icons/fa";
 import { UserContext } from "../context/UserContext";
+
+// ✅ Reusable Base64Image component with className support
+function Base64Image({ filename, alt = "Image", className = "" }) {
+  const [img, setImg] = useState(null);
+
+  useEffect(() => {
+    axios
+      .get(`http://localhost:5000/api/image-base64/${filename}`)
+      .then((res) => setImg(res.data.image))
+      .catch((err) => {
+        console.error("Image load error:", err);
+      });
+  }, [filename]);
+
+  return img ? (
+    <img
+      src={img}
+      alt={alt}
+      className={
+        className || "w-full h-48 object-contain rounded-md cursor-pointer mb-4"
+      }
+    />
+  ) : (
+    <div className={className}>Loading...</div>
+  );
+}
 
 function ProductList() {
   const [products, setProducts] = useState([]);
@@ -22,6 +47,18 @@ function ProductList() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
+
+  // ✅ Background image base64
+  const [bgImage, setBgImage] = useState(null);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/image-base64/bgimage.jpg")
+      .then((res) => setBgImage(res.data.image))
+      .catch((err) =>
+        console.error("Background image load error:", err.message)
+      );
+  }, []);
 
   useEffect(() => {
     axios
@@ -46,22 +83,20 @@ function ProductList() {
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  
-
   return (
     <div
-      className={`min-h-screen flex flex-col text-gray-900 bg-cover bg-center`}
+      className="min-h-screen flex flex-col text-gray-900 bg-cover bg-center"
       style={{
-        backgroundImage: `url('/images/bgimage.jpg')`,
+        backgroundImage: bgImage ? `url(${bgImage})` : "none",
         backgroundAttachment: "fixed",
         backgroundRepeat: "no-repeat",
       }}
     >
-      {/* Navbar */}
+      {/* ✅ Navbar with base64 logo */}
       <div className="bg-pink-700 text-white px-6 py-4 shadow-md flex justify-between items-center">
         <div className="flex items-center">
-          <img
-            src="/images/logo.jpeg"
+          <Base64Image
+            filename="logo.jpeg"
             alt="Logo"
             className="w-12 h-12 rounded-full mr-3"
           />
@@ -69,9 +104,6 @@ function ProductList() {
         </div>
 
         <div className="flex items-center space-x-4">
-          
-
-          {/* Hamburger (Mobile only) */}
           <button
             className="md:hidden text-3xl"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -79,34 +111,38 @@ function ProductList() {
             ☰
           </button>
 
-          {/* Desktop Nav */}
           <nav className="hidden md:flex space-x-6 text-lg font-medium">
             {user ? (
               <Link
                 to="/profile"
                 className="hover:text-pink-200 flex items-center"
               >
-                <FaUser className="mr-1" />My Profile
+                <FaUser className="mr-1" /> My Profile
               </Link>
             ) : (
               <Link to="/login" className="hover:text-pink-200">
                 Login
               </Link>
             )}
-            <Link to="/cart" className="hover:text-pink-200 flex items-center">
+            <Link
+              to="/cart"
+              className="hover:text-pink-200 flex items-center"
+            >
               Cart <FaShoppingCart className="ml-1" />
             </Link>
             <Link to="/wishlist" className="hover:text-pink-200">
               Wishlist ❤️
             </Link>
-            <Link to="/about" className="hover:text-pink-200 flex items-center">
-              <FaInfo className="mr-1"/>About
+            <Link
+              to="/about"
+              className="hover:text-pink-200 flex items-center"
+            >
+              <FaInfo className="mr-1" /> About
             </Link>
           </nav>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-pink-600 text-white px-6 py-2 flex flex-col space-y-2 text-lg font-medium shadow-md z-50">
           {user ? (
@@ -183,12 +219,12 @@ function ProductList() {
                 key={product.id}
                 className="rounded-lg shadow-md p-4 bg-white"
               >
-                <img
-                  src={`/images/${product.image_url}`}
-                  alt={product.name}
-                  className="w-full h-48 object-contain rounded-md cursor-pointer mb-4"
-                  onClick={() => navigate(`/products/${product.id}`)}
-                />
+                <div onClick={() => navigate(`/products/${product.id}`)}>
+                  <Base64Image
+                    filename={product.image_url}
+                    alt={product.name}
+                  />
+                </div>
                 <div>
                   <h3 className="text-lg font-semibold">{product.name}</h3>
                   <div className="flex justify-between items-center mt-2">
@@ -223,7 +259,6 @@ function ProductList() {
         </div>
       </div>
 
-      {/* Footer */}
       <footer className="bg-pink-700 text-white text-center py-4 mt-10">
         <p className="font-medium">
           © 2025 Tech Gadgets Store. All rights reserved.

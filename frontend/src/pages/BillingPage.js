@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -13,6 +13,7 @@ import {
   FaFilePdf,
   FaUser,
 } from "react-icons/fa";
+import axios from "axios";
 
 const BillingPage = () => {
   const location = useLocation();
@@ -28,66 +29,121 @@ const BillingPage = () => {
     paymentMethod,
   } = location.state || {};
 
-  const generateInvoice = () => {
+  const [bgImage, setBgImage] = useState(null);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/image-base64/bgimage.jpg")
+      .then((res) => setBgImage(res.data.image))
+      .catch((err) =>
+        console.error("Background image load error (billing):", err.message)
+      );
+  }, []);
+
+  const generateInvoice = async () => {
+  try {
+    const logoRes = await axios.get("http://localhost:5000/api/image-base64/logo.jpeg");
+    const logoBase64 = logoRes.data.image;
+
     const doc = new jsPDF();
+   // ✅ 1. White circle background
+doc.setFillColor(255, 255, 255);
+doc.circle(30, 30, 18, "F"); // circle behind
+
+// ✅ 2. Add logo image slightly smaller to simulate border
+doc.addImage(logoBase64, "JPEG", 15, 15, 30, 30); // 30x30 fits into circle
+
+
+    // ✅ Company Info (aligned right)
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
+    doc.setFontSize(20);
     doc.text("Tech Gadgets Store", 105, 20, { align: "center" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text("Your Trusted Electronics Partner", 105, 28, { align: "center" });
+    
+
+    doc.line(15, 42, 195, 42); // horizontal line
+
+    // ✅ Invoice Title - Centered
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("INVOICE", 105, 52, { align: "center" });
+
+    // ✅ Order Details
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    doc.text("Your Trusted Electronics Partner", 105, 30, { align: "center" });
-    doc.line(20, 35, 190, 35);
+    doc.text(`Order ID: ${orderId}`, 15, 65);
+    doc.text(`Tracking ID: ${trackingId}`, 15, 73);
+    doc.text(`Transaction ID: ${transactionId || "-"}`, 15, 81);
+    doc.text(`Payment Method: ${paymentMethod || "-"}`, 15, 89);
 
-    doc.setFontSize(16);
-    doc.text("Invoice", 20, 45);
-    doc.setFontSize(12);
-    doc.text(`Order ID: ${orderId}`, 20, 55);
-    doc.text(`Tracking ID: ${trackingId}`, 20, 65);
-    doc.text(`Transaction ID: ${transactionId}`, 20, 75);
-    doc.text(`Payment Method: ${paymentMethod}`, 20, 85);
-
-    doc.setFontSize(14);
+    // ✅ Customer Info
     doc.setFont("helvetica", "bold");
-    doc.text("Customer Details", 20, 100);
-    doc.setFontSize(12);
-    doc.text(`Name: ${userDetails?.name || "N/A"}`, 20, 110);
-    doc.text(`Address: ${userDetails?.address || "N/A"}`, 20, 120);
-    doc.text(`City: ${userDetails?.city || "N/A"}`, 20, 130);
-    doc.text(`Email: ${userDetails?.email || "N/A"}`, 20, 140);
-    doc.text(`Phone: ${userDetails?.phone || "N/A"}`, 20, 150);
+    doc.setFontSize(14);
+    doc.text("Customer Details", 15, 105);
 
-    doc.text("Order Items", 20, 165);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(`Name: ${userDetails?.name || "N/A"}`, 15, 113);
+    doc.text(`Address: ${userDetails?.address || "N/A"}`, 15, 121);
+    doc.text(`City: ${userDetails?.city || "N/A"}`, 15, 129);
+    doc.text(`Email: ${userDetails?.email || "N/A"}`, 15, 137);
+    doc.text(`Phone: ${userDetails?.phone || "N/A"}`, 15, 145);
+
+    // ✅ Order Table
+    doc.setFontSize(13);
+    doc.text("Order Items", 15, 160);
     autoTable(doc, {
-      startY: 170,
-      head: [["Product Name", "Quantity", "Price", "Total"]],
+      startY: 165,
+      head: [["Product", "Qty", "Price", "Total"]],
       body: items.map((item) => [
         item.product.name,
         item.quantity,
-        item.product.price,
-        item.quantity * item.product.price,
+        `${item.product.price}`,
+        `${item.quantity * item.product.price}`,
       ]),
       theme: "grid",
-      headStyles: { fillColor: [240, 128, 128] },
+      styles: {
+        font: "helvetica",
+        fontSize: 11,
+        halign: "center",
+      },
+      headStyles: { fillColor: [255, 105, 180] }, // pink header
     });
 
+    // ✅ Total Amount at Bottom
     const finalY = doc.lastAutoTable.finalY + 10;
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
-    doc.text(`Total Amount: ${total || 0}`, 20, finalY);
+    doc.text(`Total Amount: ${total || 0}`, 15, finalY);
 
+    // ✅ Footer
     doc.setFontSize(10);
-    doc.text("Thank you for shopping with Tech Gadgets Store!", 105, 290, {
-      align: "center",
-    });
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(100);
+    doc.text(
+      "Thank you for shopping with Tech Gadgets Store!",
+      105,
+      290,
+      { align: "center" }
+    );
 
     doc.save(`Invoice_Order_${orderId}.pdf`);
-  };
+  } catch (err) {
+    console.error("Invoice generation error:", err.message);
+  }
+};
+
 
   return (
     <div
-  className="font-sans bg-cover bg-center bg-no-repeat min-h-screen pb-12"
-  style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
->
-
+      className="font-sans bg-cover bg-center bg-no-repeat min-h-screen pb-12"
+      style={{
+        backgroundImage: bgImage ? `url(${bgImage})` : "none",
+      }}
+    >
       <div className="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
         <h1 className="text-center text-3xl font-bold text-pink-700 mb-6">
           Billing Details <FaFileInvoice className="inline-block ml-2" />

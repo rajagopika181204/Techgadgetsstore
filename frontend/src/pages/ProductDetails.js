@@ -14,6 +14,26 @@ import {
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+// 🔥 Base64 image component
+function Base64Image({ filename, alt, className, onClick }) {
+  const [img, setImg] = useState(null);
+
+  useEffect(() => {
+    axios
+      .get(`http://localhost:5000/api/image-base64/${filename}`)
+      .then((res) => setImg(res.data.image))
+      .catch((err) => console.error("Image load error:", err));
+  }, [filename]);
+
+  return img ? (
+    <img src={img} alt={alt} className={className} onClick={onClick} />
+  ) : (
+    <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
+      Loading...
+    </div>
+  );
+}
+
 function ProductDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -21,14 +41,23 @@ function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { addToCart } = useContext(CartContext);
-  const { user } = useContext(UserContext); // 👈 for login check
+  const { user } = useContext(UserContext);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
-  const [reviews, setReviews] = useState([]);
-  const [newReview, setNewReview] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+ 
+   // ✅ Background image base64
+  const [bgImage, setBgImage] = useState(null);
 
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/image-base64/bgimage.jpg")
+      .then((res) => setBgImage(res.data.image))
+      .catch((err) =>
+        console.error("Background image load error:", err.message)
+      );
+  }, []);
   useEffect(() => {
     axios.get("http://13.60.50.211/products").then((res) => {
       const found = res.data.find((p) => p.id === parseInt(id));
@@ -37,11 +66,6 @@ function ProductDetails() {
         res.data.filter((p) => p.id !== parseInt(id)).slice(0, 4)
       );
     });
-
-    axios
-      .get(`http://13.60.50.211/reviews/${id}`)
-      .then((res) => setReviews(res.data))
-      .catch((err) => console.error(err));
   }, [id]);
 
   const handleAddToCart = () => {
@@ -54,24 +78,6 @@ function ProductDetails() {
     } catch (error) {
       console.error("Error adding to cart:", error);
       toast.error("Failed to add to cart.");
-    }
-  };
-
-  const handleAddReview = () => {
-    if (newReview.trim()) {
-      const review = {
-        productId: id,
-        text: newReview,
-        date: new Date().toISOString(),
-      };
-      axios
-        .post("http://13.60.50.211/reviews", review)
-        .then((res) => {
-          setReviews([...reviews, res.data]);
-          setNewReview("");
-          toast.success("Review added successfully!");
-        })
-        .catch((err) => console.error(err));
     }
   };
 
@@ -96,9 +102,13 @@ function ProductDetails() {
   if (!product) return <div className="p-6 text-center">Loading...</div>;
 
   return (
-     <div
-      className="font-sans bg-cover bg-center bg-no-repeat min-h-screen flex flex-col"
-      style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
+    <div
+      className="min-h-screen flex flex-col text-gray-900 bg-cover bg-center"
+      style={{
+        backgroundImage: bgImage ? `url(${bgImage})` : "none",
+        backgroundAttachment: "fixed",
+        backgroundRepeat: "no-repeat",
+      }}
     >
       <ToastContainer />
 
@@ -164,8 +174,8 @@ function ProductDetails() {
       <div className="container mx-auto px-6 py-8 flex-1">
         <div className="flex flex-col lg:flex-row bg-gray-100 p-6 rounded-lg shadow-lg">
           <div className="flex-1 mb-6 lg:mb-0 text-center">
-            <img
-              src={`/images/${product.image_url}`}
+            <Base64Image
+              filename={product.image_url}
               alt={product.name}
               className="w-full h-auto rounded-lg cursor-pointer"
               onClick={() => setIsModalOpen(true)}
@@ -242,45 +252,6 @@ function ProductDetails() {
           </div>
         </div>
 
-        {/* Reviews */}
-        <div className="mt-10">
-          <h3 className="text-2xl font-bold mb-4">Customer Reviews</h3>
-          <div className="bg-white p-6 rounded-lg shadow mb-4">
-            {reviews.length > 0 ? (
-              reviews.map((review, index) => (
-                <div
-                  key={index}
-                  className="border-b border-gray-200 pb-4 mb-4"
-                >
-                  <p className="text-gray-700">{review.text}</p>
-                  <p className="text-gray-500 text-sm">
-                    {new Date(review.date).toLocaleString()}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-600">
-                No reviews yet. Be the first to review this product!
-              </p>
-            )}
-          </div>
-          <div className="flex items-center space-x-4">
-            <input
-              type="text"
-              value={newReview}
-              onChange={(e) => setNewReview(e.target.value)}
-              placeholder="Write your review..."
-              className="flex-1 p-2 border rounded-lg text-black focus:outline-none focus:ring focus:ring-pink-700"
-            />
-            <button
-              onClick={handleAddReview}
-              className="px-6 py-2 bg-pink-700 text-white rounded-lg shadow hover:bg-pink-600 transition"
-            >
-              Submit
-            </button>
-          </div>
-        </div>
-
         {/* Recommendations */}
         <div className="mt-10">
           <h3 className="text-2xl font-bold mb-4">You May Also Like</h3>
@@ -290,8 +261,8 @@ function ProductDetails() {
                 key={recProduct.id}
                 className="bg-gray-100 p-4 rounded-lg shadow hover:shadow-lg transition"
               >
-                <img
-                  src={`/images/${recProduct.image_url}`}
+                <Base64Image
+                  filename={recProduct.image_url}
                   alt={recProduct.name}
                   className="w-full h-40 object-cover rounded-lg mb-4 cursor-pointer"
                   onClick={() => navigate(`/products/${recProduct.id}`)}
@@ -310,8 +281,8 @@ function ProductDetails() {
           className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50"
           onClick={() => setIsModalOpen(false)}
         >
-          <img
-            src={`/images/${product.image_url}`}
+          <Base64Image
+            filename={product.image_url}
             alt={product.name}
             className="max-w-full max-h-full rounded-lg"
           />

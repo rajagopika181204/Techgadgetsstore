@@ -3,7 +3,53 @@ import { useNavigate } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { FaShoppingCart, FaHome, FaProductHunt, FaArrowLeft, FaBars } from "react-icons/fa";
+import {
+  FaShoppingCart,
+  FaHome,
+  FaProductHunt,
+  FaArrowLeft,
+  FaBars,
+} from "react-icons/fa";
+import axios from "axios";
+// ✅ Base64 Background Image Component
+function Base64Background({ filename }) {
+  const [img, setImg] = useState(null);
+
+  useEffect(() => {
+    axios
+      .get(`http://localhost:5000/api/image-base64/${filename}`)
+      .then((res) => setImg(res.data.image))
+      .catch((err) => console.error("Image load error:", err));
+  }, [filename]);
+
+  return img ? (
+    <img
+      src={img}
+      alt="Background"
+      className="absolute inset-0 w-full h-full object-cover z-0"
+    />
+  ) : null;
+}
+
+// 🔥 Base64 Image Component
+function Base64Image({ filename, alt, className }) {
+  const [img, setImg] = useState(null);
+
+  useEffect(() => {
+    axios
+      .get(`http://localhost:5000/api/image-base64/${filename}`)
+      .then((res) => setImg(res.data.image))
+      .catch((err) => console.error("Image load error:", err));
+  }, [filename]);
+
+  return img ? (
+    <img src={img} alt={alt} className={className} />
+  ) : (
+    <div className="w-48 h-48 bg-gray-100 flex items-center justify-center">
+      Loading...
+    </div>
+  );
+}
 
 function CartPage() {
   const { cartItems, removeFromCart, clearCart } = useContext(CartContext);
@@ -47,12 +93,12 @@ function CartPage() {
   };
 
   return (
-    <div
-  className="font-sans bg-cover bg-center bg-no-repeat min-h-screen pb-12"
-  style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
->
-
+    <div className="relative font-sans min-h-screen flex flex-col overflow-hidden">
+      {/* ✅ Background */}
+      <Base64Background filename="bgimage.jpg" />
+    
       <ToastContainer />
+
       {/* Responsive Navbar */}
       <nav className="bg-pink-600 text-white py-4 px-6 shadow-lg fixed top-0 left-0 w-full z-50">
         <div className="flex items-center justify-between">
@@ -63,7 +109,9 @@ function CartPage() {
             >
               <FaArrowLeft />
             </button>
-            <h1 className="text-2xl font-extrabold tracking-wide">Tech Gadgets Store</h1>
+            <h1 className="text-2xl font-extrabold tracking-wide">
+              Tech Gadgets Store
+            </h1>
           </div>
           <div className="md:hidden">
             <button onClick={() => setMenuOpen(!menuOpen)}>
@@ -71,33 +119,53 @@ function CartPage() {
             </button>
           </div>
           <div className="hidden md:flex space-x-6">
-            <button onClick={() => navigate("/")} className="flex items-center gap-2 text-lg hover:text-gray-200">
+            <button
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2 text-lg hover:text-gray-200"
+            >
               <FaHome /> Home
             </button>
-            <button onClick={() => navigate("/products")} className="flex items-center gap-2 text-lg hover:text-gray-200">
+            <button
+              onClick={() => navigate("/products")}
+              className="flex items-center gap-2 text-lg hover:text-gray-200"
+            >
               <FaProductHunt /> Products
             </button>
-            <button onClick={() => navigate("/cart")} className="flex items-center gap-2 text-lg hover:text-gray-200">
+            <button
+              onClick={() => navigate("/cart")}
+              className="flex items-center gap-2 text-lg hover:text-gray-200"
+            >
               <FaShoppingCart /> Cart
             </button>
           </div>
         </div>
+
         {/* Mobile Menu */}
         {menuOpen && (
           <div className="md:hidden mt-4 flex flex-col gap-3">
-            <button onClick={() => navigate("/")} className="flex items-center gap-2 text-lg hover:text-gray-200">
+            <button
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2 text-lg hover:text-gray-200"
+            >
               <FaHome /> Home
             </button>
-            <button onClick={() => navigate("/products")} className="flex items-center gap-2 text-lg hover:text-gray-200">
+            <button
+              onClick={() => navigate("/products")}
+              className="flex items-center gap-2 text-lg hover:text-gray-200"
+            >
               <FaProductHunt /> Products
             </button>
-            <button onClick={() => navigate("/cart")} className="flex items-center gap-2 text-lg hover:text-gray-200">
+            <button
+              onClick={() => navigate("/cart")}
+              className="flex items-center gap-2 text-lg hover:text-gray-200"
+            >
               <FaShoppingCart /> Cart
             </button>
           </div>
         )}
       </nav>
 
+      {/* Cart Section */}
       <div className="container mx-auto px-4 pt-28">
         {isCartRestored && (
           <div className="bg-green-500 text-white text-center py-3 rounded-lg mb-4 animate-bounce">
@@ -120,8 +188,8 @@ function CartPage() {
                   key={index}
                   className="flex flex-col items-center border border-gray-200 rounded-lg p-4 gap-4 shadow-lg transform hover:scale-105 transition-transform duration-300"
                 >
-                  <img
-                    src={`/images/${item.product.image_url}`}
+                  <Base64Image
+                    filename={item.product.image_url}
                     alt={item.product.name}
                     className="w-48 h-48 object-cover rounded-xl"
                   />

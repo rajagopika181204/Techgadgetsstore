@@ -1,14 +1,37 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import {UserContext} from '../context/UserContext';
-import { FaArrowLeft, FaSignOutAlt, FaBoxOpen, FaUserCircle } from "react-icons/fa";
+import axios from "axios";
+import {
+  FaArrowLeft,
+  FaSignOutAlt,
+  FaBoxOpen,
+  FaUserCircle,
+} from "react-icons/fa";
+import { UserContext } from "../context/UserContext";
+
+// ✅ Reusable base64 image component
+function Base64Image({ filename, alt = "Image", className = "" }) {
+  const [img, setImg] = useState(null);
+
+  useEffect(() => {
+    axios
+      .get(`http://localhost:5000/api/image-base64/${filename}`)
+      .then((res) => setImg(res.data.image))
+      .catch((err) => {
+        console.error("Image load error:", err);
+      });
+  }, [filename]);
+
+  return img ? (
+    <img src={img} alt={alt} className={className} />
+  ) : null;
+}
 
 const Profile = () => {
   const { user, setUser } = useContext(UserContext);
   const [orders, setOrders] = useState([]);
   const navigate = useNavigate();
 
-  // Fetch orders when the component mounts
   useEffect(() => {
     if (!user) {
       const storedUser = localStorage.getItem("user");
@@ -36,7 +59,6 @@ const Profile = () => {
     }
   }, [user, setUser, navigate]);
 
-  // Logout function
   const handleLogout = () => {
     localStorage.removeItem("user");
     setUser(null);
@@ -46,12 +68,23 @@ const Profile = () => {
   if (!user) return null;
 
   return (
-    <div
-  className="font-sans bg-cover bg-center bg-no-repeat min-h-screen pb-12"
-  style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
->
+    <div className="relative font-sans min-h-screen pb-12 overflow-hidden">
+      {/* ✅ Background image from backend */}
+      <Base64Image
+        filename="bgimage.jpg"
+        alt="Background"
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      />
 
-      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8">
+      {/* ✅ Decorative overlay image (optional) */}
+      <Base64Image
+        filename="profilebgpattern.png" // change this to your decorative image name
+        alt="Decoration"
+        className="absolute top-10 left-1/2 transform -translate-x-1/2 w-72 opacity-20 z-0"
+      />
+
+      {/* ✅ Main Content */}
+      <div className="relative z-10 max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8 mt-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <button
@@ -64,13 +97,14 @@ const Profile = () => {
           <h1 className="text-3xl font-bold text-gray-800">My Profile</h1>
         </div>
 
-        {/* User Information */}
+        {/* User Info */}
         <div className="relative bg-gradient-to-r from-pink-700 via-pink-400 to-pink-700 p-8 rounded-2xl shadow-lg text-white mb-10">
           <div className="flex items-center space-x-6">
-            {/* User Icon */}
             <FaUserCircle className="text-9xl text-white shadow-lg" />
             <div>
-              <p className="text-xl font-semibold">{user.username || "User Name"}</p>
+              <p className="text-xl font-semibold">
+                {user.username || "User Name"}
+              </p>
               <p className="text-sm">{user.email}</p>
             </div>
           </div>
@@ -90,7 +124,9 @@ const Profile = () => {
         </h2>
         <div className="grid gap-6">
           {orders.length === 0 ? (
-            <p className="text-gray-500 text-lg text-center">No orders found.</p>
+            <p className="text-gray-500 text-lg text-center">
+              No orders found.
+            </p>
           ) : (
             orders.map((order) => (
               <div
@@ -118,7 +154,8 @@ const Profile = () => {
                   {new Date(order.created_at).toLocaleString()}
                 </p>
                 <p className="text-gray-700">
-                  <strong>Delivery Address:</strong> {order.address}, {order.city}
+                  <strong>Delivery Address:</strong> {order.address},{" "}
+                  {order.city}
                 </p>
               </div>
             ))

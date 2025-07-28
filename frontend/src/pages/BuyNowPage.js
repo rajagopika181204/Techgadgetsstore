@@ -16,6 +16,7 @@ import {
   FaHome,
 } from "react-icons/fa";
 
+// Navbar Component
 const Navbar = ({ onBack }) => {
   const navigate = useNavigate();
 
@@ -37,8 +38,7 @@ const Navbar = ({ onBack }) => {
           className="flex items-center gap-2 text-lg hover:text-gray-200"
           onClick={() => navigate("/")}
         >
-          <FaHome />
-          Home
+          <FaHome /> Home
         </button>
         <button
           className="flex items-center gap-2 text-lg hover:text-gray-200"
@@ -77,36 +77,59 @@ const BuyNowPage = () => {
     qrVisible: false,
   });
 
+  const [items, setItems] = useState([]); // ✅ Fixed missing state
+
+  // 🔥 Fetch base64 image for each product
+  const fetchBase64Images = async (items) => {
+    const updatedItems = await Promise.all(
+      items.map(async (item) => {
+        try {
+          const res = await axios.get(
+            `http://localhost:5000/api/image-base64/${item.product.image_url}`
+          );
+          return {
+            ...item,
+            product: {
+              ...item.product,
+              base64Image: res.data.image,
+            },
+          };
+        } catch (err) {
+          console.error("Image fetch error:", err);
+          return item;
+        }
+      })
+    );
+    return updatedItems;
+  };
+
+  useEffect(() => {
+    const prepareItems = async () => {
+      const baseItems = cartDetails || (product ? [{ product, quantity }] : []);
+      const withImages = await fetchBase64Images(baseItems);
+      setItems(withImages); // ✅ Now setItems will not throw error
+    };
+    prepareItems();
+  }, [product, quantity, cartDetails]);
+
   useEffect(() => {
     const fetchAddresses = async () => {
       if (!user?.email) return;
-
       try {
-        const response = await axios.get(
-          `http://13.60.50.211/api/address/${user.email}`
-        );
-
-        if (response.data.success) {
+        const res = await axios.get(`http://13.60.50.211/api/address/${user.email}`);
+        if (res.data.success) {
           setSavedAddresses(
-            Array.isArray(response.data.address)
-              ? response.data.address
-              : [response.data.address]
+            Array.isArray(res.data.address) ? res.data.address : [res.data.address]
           );
         }
       } catch (err) {
-        console.error("Error fetching addresses:", err);
+        console.error("Fetch address error:", err);
       }
     };
-
     fetchAddresses();
   }, [user?.email]);
 
-  const items = cartDetails || (product ? [{ product, quantity }] : []);
-  const calculatedTotal = cartDetails
-    ? totalPrice
-    : product
-    ? product.price * quantity
-    : 0;
+  const calculatedTotal = totalPrice || (product ? product.price * quantity : 0);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -115,59 +138,49 @@ const BuyNowPage = () => {
 
   const handleAddressSelect = (address) => {
     setSelectedAddress(address.id);
-    setUserDetails({
-      ...userDetails,
-      name: address.name,
-      address: address.address,
-      city: address.city,
-      pincode: address.pincode,
-      phone: address.phone,
-    });
+    setUserDetails({ ...userDetails, ...address });
   };
 
   const handleSaveNewAddress = async () => {
     if (!userDetails.name || !userDetails.address || !userDetails.email) {
-       toast.error("Please fill all required fields!");
+      toast.error("Please fill all required fields!");
       return;
     }
-
     try {
-      const response = await axios.post(
-        "http://13.60.50.211/api/save-address",
-        userDetails
-      );
-
-      if (response.data.success) {
-        setSavedAddresses([response.data.address]);
+      const res = await axios.post("http://13.60.50.211/api/save-address", userDetails);
+      if (res.data.success) {
+        setSavedAddresses([res.data.address]);
         setShowNewAddressForm(false);
-        toast.success("Address saved successfully!");
+        toast.success("Address saved!");
       }
     } catch (err) {
-      console.error("Save error:", err.response?.data || err.message);
-      toast.error(err.response?.data?.message || "Failed to save address.");
+      toast.error("Failed to save address");
     }
   };
 
   const handleGenerateUPI = async () => {
     try {
-      const response = await axios.post(
-        "http://13.60.50.211/api/generate-upi-link",
-        { amount: calculatedTotal, orderId: `ORDER_${Date.now()}` }
-      );
+      const res = await axios.post("http://13.60.50.211/api/generate-upi-link", {
+        amount: calculatedTotal,
+        orderId: `ORDER_${Date.now()}`,
+      });
       setUpiPayment({
         show: true,
-        link: response.data.upiLink,
-        qrData: response.data.qrData,
+        link: res.data.upiLink,
+        qrData: res.data.qrData,
         qrVisible: false,
       });
       toast.success("UPI Payment Link Generated!");
     } catch (err) {
-      console.error("UPI Generation Error:", err);
-      toast.error("Failed to generate UPI link. Please try again.");
+      toast.error("Failed to generate UPI link");
     }
   };
 
   const handlePlaceOrder = async () => {
+    const orderId = `ORDER_${Date.now()}`;
+    const trackingId = `TRK_${Date.now()}`;
+    const transactionId = `TXN_${Date.now()}`;
+
     if (
       !userDetails.name ||
       !userDetails.address ||
@@ -181,27 +194,21 @@ const BuyNowPage = () => {
     }
 
     if (userDetails.paymentMethod === "upi" && !upiPayment.show) {
-      toast.error("Please generate UPI Payment before placing the order.");
+      toast.error("Generate UPI link first");
       return;
     }
-    const orderId 
-    
-    = `ORDER_${Date.now()}`;
-    const trackingId = `TRACK_${Date.now()}`;
-    const transactionId = `TXN_${Date.now()}`;
+
     if (userDetails.paymentMethod === "razorpay") {
       if (!window.Razorpay) {
       toast.error("Payment failed. Check your connection and try again.");
       return;
     }
-        const options = {
-          key: "rzp_test_EH1UEwLILEPXCj", // Replace with your Razorpay Key ID
-          amount: calculatedTotal * 100, // Amount in paise
-          currency: "INR",
-          name: "Tech Gadgets Store",
-          description: "Purchase Description",
-
-          handler:() => {
+      const options = {
+        key: "rzp_test_EH1UEwLILEPXCj",
+        amount: calculatedTotal * 100,
+        currency: "INR",
+        name: "Tech Gadgets Store",
+        handler: () =>
           navigate("/payment-success", {
             state: {
               orderId,
@@ -212,21 +219,17 @@ const BuyNowPage = () => {
               total: calculatedTotal,
               paymentMethod: userDetails.paymentMethod,
             },
-          });
+          }),
+        prefill: {
+          name: userDetails.name,
+          email: userDetails.email,
+          contact: userDetails.phone,
         },
-          prefill: {
-            name: userDetails.name,
-            email: userDetails.email,
-            contact: userDetails.phone,
-          },
-          theme: {
-            color: "#F37254",
-          },
-        };
-
-        const razorpay = new window.Razorpay(options);
-        razorpay.open();
-      } else {
+        theme: { color: "#F37254" },
+      };
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+    }else {
         setTimeout(() => {
       navigate("/payment-success", {
         state: {
@@ -244,8 +247,7 @@ const BuyNowPage = () => {
 
     try {
       const transactionId =
-        userDetails.paymentMethod === "upi" || "razorpay" ? `TXN${Date.now()}` : null;
-
+        userDetails.paymentMethod === "upi"  ? `TXN${Date.now()}` : null;
       const response = await axios.post("http://13.60.50.211/api/orders", {
         items,
         userDetails,
@@ -253,154 +255,133 @@ const BuyNowPage = () => {
         paymentMethod: userDetails.paymentMethod,
         transactionId,
       });
-
       if (response.data && response.data.orderId) {
-      toast.success("Order placed successfully!");
+      toast.success("Order placed!");
 
-  // Delay navigation to let the toast display
-  setTimeout(() => {
-    navigate("/payment-success", {
-      state: {
-        orderId: response.data.orderId,
-        trackingId: response.data.trackingId,
-        transactionId: response.data.transactionId,
-        userDetails: userDetails,
-        items: items,
-        total: calculatedTotal,
-        paymentMethod: userDetails.paymentMethod,
-      },
-    });
-  }, 3000); // 3-second delay to match the toast display duration
-}
-
-    } catch (err) {
+      setTimeout(() => {
+        navigate("/payment-success", {
+          state: {
+            orderId: response.data.orderId,
+            trackingId: response.data.trackingId,
+            transactionId: response.data.transactionId,
+            userDetails,
+            items,
+            total: calculatedTotal,
+            paymentMethod: userDetails.paymentMethod,
+          },
+        });
+      }, 3000);
+    } 
+  }catch (err) {
       console.error("Order Placement Error:", err.response?.data || err.message);
       toast.success("Order Placed Successfully!.");
     }
   };
 
   return (
-    <>
     <div
-  className="font-sans bg-cover bg-center bg-no-repeat min-h-screen pb-12"
-  style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
->
-
+      className="font-sans bg-cover bg-center bg-no-repeat min-h-screen pb-12"
+      style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
+    >
       <Navbar onBack={() => navigate(-1)} />
-        <ToastContainer />
+      <ToastContainer />
       <div className="py-10 px-6 max-w-4xl mx-auto">
         <h1 className="text-center text-3xl font-bold mb-8 text-gray-800">Checkout</h1>
 
         {/* Order Summary */}
         <div className="bg-gradient-to-r from-pink-100 to-pink-500 p-6 rounded-lg shadow-md mb-8">
-          
           {items.map((item, index) => (
-     <div key={index} className="flex items-center gap-4 mb-4 bg-white p-3 rounded-lg shadow-md">
-    <img
-      src={`/images/${item.product.image_url}`}
-      alt={item.product.name}
-      className="w-20 h-20 object-cover rounded"
-    />
-    <div>
-      <p className="font-semibold text-gray-800">{item.product.name}</p>
-      <p className="text-gray-600">Quantity: {item.quantity}</p>
-      <p className="text-pink-700 font-bold">₹{item.product.price * item.quantity}</p>
-    </div>
-  </div>
-))}
-
+            <div
+              key={index}
+              className="flex items-center gap-4 mb-4 bg-white p-3 rounded-lg shadow-md"
+            >
+              <img
+                src={item.product.base64Image}
+                alt={item.product.name}
+                className="w-20 h-20 object-cover rounded"
+              />
+              <div>
+                <p className="font-semibold text-gray-800">{item.product.name}</p>
+                <p className="text-gray-600">Quantity: {item.quantity}</p>
+                <p className="text-pink-700 font-bold">
+                  ₹{item.product.price * item.quantity}
+                </p>
+              </div>
+            </div>
+          ))}
           <h3 className="text-lg font-semibold mt-4">Total: ₹{calculatedTotal}</h3>
         </div>
 
-        {/* Saved Addresses */}
+        {/* Address Form */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-          <h2 className="text-xl font-semibold mb-4">Select Delivery Address 📦</h2>
-          {savedAddresses.length > 0 ? (
-            <div key={Date.now()} className="space-y-4">
-              {savedAddresses.map((address) => (
-                <div
-                  key={address.id}
-                  className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                    selectedAddress === address.id
-                      ? "bg-gradient-to-r from-pink-100 to-pink-400 border-pink-500"
-                      : "border-gray-300"
-                  }`}
-                  onClick={() => handleAddressSelect(address)}
-                >
-                  <input
-                    type="radio"
-                    name="address"
-                    checked={selectedAddress === address.id}
-                    onChange={() => handleAddressSelect(address)}
-                    className="mr-3"
-                  />
-                  <div>
-                    <p className="font-semibold">{address.name}</p>
-                    <p>{address.address}</p>
-                    <p>
-                      {address.city} - {address.pincode}
-                    </p>
-                    <p>Phone: {address.phone}</p>
-                    <p>Email: {address.email}</p>
-                  </div>
-                </div>
-              ))}
+          <h2 className="text-xl font-semibold mb-4">Delivery Address 📦</h2>
+          {savedAddresses.map((address) => (
+            <div
+              key={address.id}
+              onClick={() => handleAddressSelect(address)}
+              className={`p-4 border rounded-lg mb-4 cursor-pointer ${
+                selectedAddress === address.id
+                  ? "bg-pink-100 border-pink-400"
+                  : "border-gray-300"
+              }`}
+            >
+              <input
+                type="radio"
+                checked={selectedAddress === address.id}
+                onChange={() => handleAddressSelect(address)}
+                className="mr-2"
+              />
+              <strong>{address.name}</strong> — {address.address}, {address.city},{" "}
+              {address.pincode} (Phone: {address.phone})
             </div>
-          ) : (
-            <p className="text-gray-500">No saved addresses found.</p>
-          )}
+          ))}
           <button
             onClick={() => setShowNewAddressForm(true)}
-            className="mt-6 px-5 py-3 bg-gradient-to-r from-pink-500 to-pink-700 text-white rounded-lg hover:shadow-lg transition"
+            className="mt-4 px-4 py-2 bg-pink-600 text-white rounded"
           >
-            <FaPlus className="inline-block mr-2" /> Add New Address
+            <FaPlus className="inline mr-2" />
+            Add New Address
           </button>
         </div>
 
-        {/* New Address Form */}
         {showNewAddressForm && (
           <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-            <h2 className="text-xl font-semibold mb-4">📦New Shipping Address</h2>
-            {"name address city email pincode phone"
-              .split(" ")
-              .map((field) => (
-                <input
-                  key={field}
-                  type="text"
-                  name={field}
-                  placeholder={field[0].toUpperCase() + field.slice(1)}
-                  value={userDetails[field]}
-                  onChange={handleInputChange}
-                  className="w-full p-3 border rounded-lg mb-4 focus:ring-2 focus:ring-pink-300"
-                />
-              ))}
-            <div className="flex space-x-4">
-              <button
-                onClick={handleSaveNewAddress}
-                className="px-5 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-              >
-                <FaCheck className="inline-block mr-2" /> Save Address
-              </button>
-              <button
-                onClick={() => setShowNewAddressForm(false)}
-                className="px-5 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
-              >
-                Cancel
-              </button>
-            </div>
+            <h3 className="font-semibold text-lg mb-3">New Address</h3>
+            {["name", "address", "city", "email", "pincode", "phone"].map((field) => (
+              <input
+                key={field}
+                name={field}
+                placeholder={field[0].toUpperCase() + field.slice(1)}
+                value={userDetails[field]}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded-lg mb-3"
+              />
+            ))}
+            <button
+              onClick={handleSaveNewAddress}
+              className="bg-green-600 text-white px-4 py-2 rounded mr-3"
+            >
+              <FaCheck className="inline mr-1" /> Save Address
+            </button>
+            <button
+              onClick={() => setShowNewAddressForm(false)}
+              className="bg-red-500 text-white px-4 py-2 rounded"
+            >
+              Cancel
+            </button>
           </div>
         )}
 
-        {/* Payment Method */}
-        <div className="bg-gradient-to-r from-pink-100 to-pink-500 p-6 rounded-lg shadow-md mb-8">
+        {/* Payment Section */}
+        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
           <h2 className="text-xl font-semibold mb-4">
-            <FaCreditCard className="inline-block mr-2" /> Payment Method
-          </h2>
+             <FaCreditCard className="inline-block mr-2" /> Payment Method
+             </h2>
           <select
             name="paymentMethod"
             value={userDetails.paymentMethod}
             onChange={handleInputChange}
-            className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-pink-400"
+            className="w-full p-3 border rounded-lg"
           >
             <option value="creditCard">Credit Card</option>
             <option value="upi">UPI</option>
@@ -408,7 +389,7 @@ const BuyNowPage = () => {
             <option value="cashOnDelivery">Cash on Delivery</option>
           </select>
         </div>
-
+        
         {/* UPI Payment */}
         {userDetails.paymentMethod === "upi" && (
           <div className="bg-white p-6 rounded-lg shadow-md mb-8">
@@ -438,17 +419,15 @@ const BuyNowPage = () => {
             )}
           </div>
         )}
-
         <button
           onClick={handlePlaceOrder}
-          className="w-full px-5 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
+          className="w-full px-5 py-3 bg-green-600 text-white rounded-lg"
         >
           Place Order
         </button>
       </div>
-      </div>
-    </>
+    </div>
   );
 };
 
-export default BuyNowPage;  
+export default BuyNowPage;

@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FaCheckCircle, FaArrowRight, FaShoppingCart } from "react-icons/fa";
+import axios from "axios";
 
 const PaymentSuccessPage = () => {
   const location = useLocation();
@@ -16,6 +17,17 @@ const PaymentSuccessPage = () => {
     paymentMethod,
   } = location.state || {};
 
+  const [bgImage, setBgImage] = useState(null);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/image-base64/bgimage.jpg")
+      .then((res) => setBgImage(res.data.image))
+      .catch((err) =>
+        console.error("Background image load error (payment page):", err.message)
+      );
+  }, []);
+
   if (!orderId || !trackingId) {
     return (
       <div className="flex justify-center items-center h-screen bg-pink-100">
@@ -25,7 +37,7 @@ const PaymentSuccessPage = () => {
             Payment details are missing. Please try again!
           </p>
           <button
-            className="bg-pink-700 text-white px-6 py-2 mt-6 rounded-lg hover:bg-pink-700"
+            className="bg-pink-700 text-white px-6 py-2 mt-6 rounded-lg hover:bg-pink-800"
             onClick={() => navigate("/")}
           >
             Go Back to Home
@@ -50,11 +62,12 @@ const PaymentSuccessPage = () => {
   };
 
   return (
-  <div
-  className="font-sans min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center"
-  style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
->
-
+    <div
+      className="font-sans min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center"
+      style={{
+        backgroundImage: bgImage ? `url(${bgImage})` : "none",
+      }}
+    >
       <div className="bg-white max-w-lg w-full rounded-2xl shadow-2xl p-8">
         <div className="text-center mb-8">
           <FaCheckCircle className="text-green-700 mx-auto text-6xl" />
@@ -89,7 +102,7 @@ const PaymentSuccessPage = () => {
             Go to Home <FaArrowRight />
           </button>
           <button
-            className="flex items-center gap-2 bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-5700 transition duration-300"
+            className="flex items-center gap-2 bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 transition duration-300"
             onClick={handleViewOrders}
           >
             <FaShoppingCart /> View Orders

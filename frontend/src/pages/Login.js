@@ -1,10 +1,28 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { UserContext } from "../context/UserContext";
 import { FaEnvelope, FaLock, FaUserAlt, FaHome } from "react-icons/fa";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+// ✅ Reusable Base64 Image Loader
+function Base64Image({ filename, alt = "", className = "" }) {
+  const [img, setImg] = useState(null);
+
+  useEffect(() => {
+    axios
+      .get(`http://localhost:5000/api/image-base64/${filename}`)
+      .then((res) => setImg(res.data.image))
+      .catch((err) => {
+        console.error("Image load error:", err);
+      });
+  }, [filename]);
+
+  return img ? (
+    <img src={img} alt={alt} className={className} />
+  ) : null;
+}
 
 function Login() {
   const { setUser } = useContext(UserContext);
@@ -25,10 +43,6 @@ function Login() {
       toast.success("Login successful!", {
         position: "top-right",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
       });
 
       const buyNowData = localStorage.getItem("buyNowRedirect");
@@ -45,33 +59,32 @@ function Login() {
       toast.error(err.response?.data?.error || "Login failed", {
         position: "top-right",
         autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
       });
     }
   };
 
   return (
-   <div
-  className="font-sans min-h-screen bg-cover bg-center bg-no-repeat flex items-center justify-center"
-  style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
->
+    <div className="relative font-sans min-h-screen flex items-center justify-center overflow-hidden">
+      {/* ✅ Background image from backend */}
+      <Base64Image
+        filename="bgimage.jpg"
+        alt="Background"
+        className="absolute inset-0 w-full h-full object-cover z-0"
+      />
 
-
+      {/* ✅ Toast Container */}
       <ToastContainer />
 
-      {/* Fixed Top-Left Home Button */}
+      {/* ✅ Home Button */}
       <button
-        className="fixed top-6 left-6 text-pink-600 text-2xl hover:text-pink-700 transition"
+        className="fixed top-6 left-6 text-pink-600 text-2xl hover:text-pink-700 transition z-10"
         onClick={() => navigate("/")}
       >
         <FaHome className="inline-block mr-2" /> Home
       </button>
 
-      {/* Login Card */}
-      <div className="bg-white p-10 rounded-2xl shadow-2xl w-full max-w-lg">
+      {/* ✅ Login Card */}
+      <div className="relative z-10 bg-white p-10 rounded-2xl shadow-2xl w-full max-w-lg">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-extrabold text-pink-700">
             <FaUserAlt className="inline-block mr-3" /> TechGadget Store
@@ -80,6 +93,7 @@ function Login() {
             Login to access the best tech gadgets!
           </p>
         </div>
+
         <form
           onSubmit={handleLogin}
           className="space-y-8 animate-fade-in duration-500"
@@ -105,6 +119,7 @@ function Login() {
               />
             </div>
           </div>
+
           <div className="relative">
             <label
               htmlFor="password"
@@ -126,13 +141,15 @@ function Login() {
               />
             </div>
           </div>
+
           <button
             type="submit"
-            className="w-full py-4 text-xl bg-gradient-to-r from-pink-600 to-pink-700 text-white font-bold rounded-full hover:shadow-lg hover:from-pink-600 hover:to-pink-700 transition-all duration-300"
+            className="w-full py-4 text-xl bg-gradient-to-r from-pink-600 to-pink-700 text-white font-bold rounded-full hover:shadow-lg transition-all duration-300"
           >
             Login
           </button>
         </form>
+
         <p className="text-center text-lg text-gray-600 mt-6">
           Don't have an account?{" "}
           <Link
