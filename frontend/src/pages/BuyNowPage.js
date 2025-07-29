@@ -85,7 +85,7 @@ const BuyNowPage = () => {
       items.map(async (item) => {
         try {
           const res = await axios.get(
-            `http://localhost:5000/api/image-base64/${item.product.image_url}`
+            `http://13.60.50.211/api/image-base64/${item.product.image_url}`
           );
           return {
             ...item,
@@ -99,10 +99,21 @@ const BuyNowPage = () => {
           return item;
         }
       })
+      
     );
     return updatedItems;
   };
+// ✅ Background image base64
+  const [bgImage, setBgImage] = useState(null);
 
+  useEffect(() => {
+    axios
+      .get("http://13.60.50.211/api/image-base64/bgimage.jpg")
+      .then((res) => setBgImage(res.data.image))
+      .catch((err) =>
+        console.error("Background image load error:", err.message)
+      );
+  }, []);
   useEffect(() => {
     const prepareItems = async () => {
       const baseItems = cartDetails || (product ? [{ product, quantity }] : []);
@@ -280,8 +291,12 @@ const BuyNowPage = () => {
 
   return (
     <div
-      className="font-sans bg-cover bg-center bg-no-repeat min-h-screen pb-12"
-      style={{ backgroundImage: "url('/images/bgimage.jpg')" }}
+      className="min-h-screen flex flex-col text-gray-900 bg-cover bg-center"
+      style={{
+        backgroundImage: bgImage ? `url(${bgImage})` : "none",
+        backgroundAttachment: "fixed",
+        backgroundRepeat: "no-repeat",
+      }}
     >
       <Navbar onBack={() => navigate(-1)} />
       <ToastContainer />

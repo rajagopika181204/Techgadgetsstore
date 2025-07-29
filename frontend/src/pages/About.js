@@ -20,7 +20,7 @@ function AboutPage() {
   const [img, setImg] = useState(null);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/image-base64/${filename}`)
+    fetch(`http://13.60.50.211/api/image-base64/${filename}`)
       .then((res) => res.json())
       .then((data) => setImg(data.image))
       .catch((err) => console.error("Image load error:", err));

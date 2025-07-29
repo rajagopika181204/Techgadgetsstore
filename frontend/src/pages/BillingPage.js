@@ -33,7 +33,7 @@ const BillingPage = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/image-base64/bgimage.jpg")
+      .get("http://13.60.50.211/api/image-base64/bgimage.jpg")
       .then((res) => setBgImage(res.data.image))
       .catch((err) =>
         console.error("Background image load error (billing):", err.message)
@@ -42,7 +42,7 @@ const BillingPage = () => {
 
   const generateInvoice = async () => {
   try {
-    const logoRes = await axios.get("http://localhost:5000/api/image-base64/logo.jpeg");
+    const logoRes = await axios.get("http://13.60.50.211/api/image-base64/logo.jpeg");
     const logoBase64 = logoRes.data.image;
 
     const doc = new jsPDF();

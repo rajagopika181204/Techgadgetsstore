@@ -15,7 +15,7 @@ function Base64Image({ filename, alt = "Image", className = "" }) {
 
   useEffect(() => {
     axios
-      .get(`http://localhost:5000/api/image-base64/${filename}`)
+      .get(`http://13.60.50.211/api/image-base64/${filename}`)
       .then((res) => setImg(res.data.image))
       .catch((err) => {
         console.error("Image load error:", err);
