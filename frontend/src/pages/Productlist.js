@@ -1,3 +1,4 @@
+// ✅ Full ProductList.js with working Mobile Navbar & Framer Motion Enhancements
 import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
@@ -135,7 +136,7 @@ function ProductList() {
         backgroundAttachment: "fixed",
       }}
     >
-      <div className="bg-pink-700 text-white px-6 py-4 shadow-md flex justify-between items-center">
+      <div className="bg-pink-700 text-white px-6 py-4 shadow-md flex justify-between items-center relative">
         <div className="flex items-center">
           <Base64Image
             filename="logo.jpeg"
@@ -153,6 +154,7 @@ function ProductList() {
             ☰
           </button>
 
+          {/* Desktop Menu */}
           <nav className="hidden md:flex space-x-6 text-lg font-medium">
             {user ? (
               <Link to="/profile" className="hover:text-pink-200 flex items-center">
@@ -169,6 +171,30 @@ function ProductList() {
               <FaInfo className="mr-1" /> About
             </Link>
           </nav>
+
+          {/* ✅ Mobile Dropdown */}
+          {mobileMenuOpen && (
+            <div className="absolute top-full left-0 right-0 bg-pink-800 z-50 flex flex-col md:hidden text-white px-6 py-4 space-y-3 shadow-md text-lg font-medium">
+              {user ? (
+                <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200">
+                  <FaUser className="inline mr-2" /> My Profile
+                </Link>
+              ) : (
+                <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200">
+                  Login
+                </Link>
+              )}
+              <Link to="/cart" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200">
+                <FaShoppingCart className="inline mr-2" /> Cart
+              </Link>
+              <Link to="/wishlist" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200">
+                ❤️ Wishlist
+              </Link>
+              <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200">
+                <FaInfo className="inline mr-2" /> About
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 
