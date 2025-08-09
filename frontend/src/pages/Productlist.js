@@ -1,9 +1,9 @@
-// ✅ Full ProductList.js with working Mobile Navbar & Framer Motion Enhancements
+// ✅ Full ProductList.js with Left-to-Right Mobile Menu
 import React, { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import Slider from "react-slick";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FaHeart,
   FaRegHeart,
@@ -11,6 +11,7 @@ import {
   FaUser,
   FaShoppingCart,
   FaInfo,
+  FaTimes
 } from "react-icons/fa";
 import { UserContext } from "../context/UserContext";
 import "slick-carousel/slick/slick.css";
@@ -136,6 +137,7 @@ function ProductList() {
         backgroundAttachment: "fixed",
       }}
     >
+      {/* Top Navbar */}
       <div className="bg-pink-700 text-white px-6 py-4 shadow-md flex justify-between items-center relative">
         <div className="flex items-center">
           <Base64Image
@@ -149,7 +151,7 @@ function ProductList() {
         <div className="flex items-center space-x-4">
           <button
             className="md:hidden text-3xl"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setMobileMenuOpen(true)}
           >
             ☰
           </button>
@@ -171,33 +173,48 @@ function ProductList() {
               <FaInfo className="mr-1" /> About
             </Link>
           </nav>
-
-          {/* ✅ Mobile Dropdown */}
-          {mobileMenuOpen && (
-            <div className="absolute top-full left-0 right-0 bg-pink-800 z-50 flex flex-col md:hidden text-white px-6 py-4 space-y-3 shadow-md text-lg font-medium">
-              {user ? (
-                <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200">
-                  <FaUser className="inline mr-2" /> My Profile
-                </Link>
-              ) : (
-                <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200">
-                  Login
-                </Link>
-              )}
-              <Link to="/cart" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200">
-                <FaShoppingCart className="inline mr-2" /> Cart
-              </Link>
-              <Link to="/wishlist" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200">
-                ❤️ Wishlist
-              </Link>
-              <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200">
-                <FaInfo className="inline mr-2" /> About
-              </Link>
-            </div>
-          )}
         </div>
       </div>
 
+      {/* ✅ Mobile Side Drawer Menu */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-0 left-0 w-64 h-full bg-pink-800 text-white z-50 shadow-lg p-6 flex flex-col space-y-6"
+          >
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-bold">Menu</span>
+              <button onClick={() => setMobileMenuOpen(false)}>
+                <FaTimes size={24} />
+              </button>
+            </div>
+            {user ? (
+              <Link to="/profile" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200 flex items-center">
+                <FaUser className="mr-2" /> My Profile
+              </Link>
+            ) : (
+              <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200">
+                Login
+              </Link>
+            )}
+            <Link to="/cart" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200 flex items-center">
+              <FaShoppingCart className="mr-2" /> Cart
+            </Link>
+            <Link to="/wishlist" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200">
+              ❤️ Wishlist
+            </Link>
+            <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="hover:text-pink-200 flex items-center">
+              <FaInfo className="mr-2" /> About
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Search Bar */}
       <div className="flex items-center justify-center my-6 px-4">
         <div className="relative w-full max-w-lg">
           <FaSearch className="absolute left-3 top-3 text-gray-400 text-lg" />
@@ -211,8 +228,10 @@ function ProductList() {
         </div>
       </div>
 
+      {/* Carousel */}
       <TopCarousel products={filteredProducts} />
 
+      {/* Product Grid */}
       <div className="flex-1 px-6">
         <h1 className="text-center text-4xl font-bold mb-8 text-pink-700">
           Explore Our Latest Tech Gadgets!
@@ -263,6 +282,7 @@ function ProductList() {
         </div>
       </div>
 
+      {/* Footer */}
       <footer className="bg-pink-700 text-white text-center py-4 mt-10">
         <p className="font-medium">© 2025 Tech Gadgets Store. All rights reserved.</p>
         <div className="mt-2 space-x-4">
