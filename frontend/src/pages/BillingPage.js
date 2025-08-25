@@ -33,7 +33,7 @@ const BillingPage = () => {
 
   useEffect(() => {
     axios
-      .get("http://13.60.50.211/api/image-base64/bgimage.jpg")
+      .get("https://techgadgetsstore-backend.onrender.com/api/image-base64/bgimage.jpg")
       .then((res) => setBgImage(res.data.image))
       .catch((err) =>
         console.error("Background image load error (billing):", err.message)
@@ -42,61 +42,72 @@ const BillingPage = () => {
 
   const generateInvoice = async () => {
   try {
-    const logoRes = await axios.get("http://13.60.50.211/api/image-base64/logo.jpeg");
+    const logoRes = await axios.get(
+      "https://techgadgetsstore-backend.onrender.com/api/image-base64/logo.jpeg"
+    );
     const logoBase64 = logoRes.data.image;
 
     const doc = new jsPDF();
-   // ✅ 1. White circle background
-doc.setFillColor(255, 255, 255);
-doc.circle(30, 30, 18, "F"); // circle behind
 
-// ✅ 2. Add logo image slightly smaller to simulate border
-doc.addImage(logoBase64, "JPEG", 15, 15, 30, 30); // 30x30 fits into circle
+    // === Logo inside circle at top-left (moved slightly down) ===
+    doc.setFillColor(255, 255, 255);
+    doc.circle(20, 25, 12, "F"); // Y increased from 20 → 25
+    doc.addImage(logoBase64, "JPEG", 8, 13, 24, 24); // Y increased from 8 → 13
 
-
-    // ✅ Company Info (aligned right)
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(20);
-    doc.text("Tech Gadgets Store", 105, 20, { align: "center" });
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
-    doc.text("Your Trusted Electronics Partner", 105, 28, { align: "center" });
-    
-
-    doc.line(15, 42, 195, 42); // horizontal line
-
-    // ✅ Invoice Title - Centered
+    // === Company Info (right aligned) ===
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
-    doc.text("INVOICE", 105, 52, { align: "center" });
+    doc.setTextColor(199, 21, 133); // Dark pink (Deep rose)
+    doc.text("Tech Gadgets Store", 200, 20, { align: "right" });
 
-    // ✅ Order Details
-    doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
-    doc.text(`Order ID: ${orderId}`, 15, 65);
-    doc.text(`Tracking ID: ${trackingId}`, 15, 73);
-    doc.text(`Transaction ID: ${transactionId || "-"}`, 15, 81);
-    doc.text(`Payment Method: ${paymentMethod || "-"}`, 15, 89);
+    doc.setFontSize(11);
+    doc.setTextColor(80, 80, 80);
+    doc.text("Your Trusted Electronics Partner", 200, 27, { align: "right" });
+    doc.text("Email: support@techgadgets.com", 200, 33, { align: "right" });
+    doc.text("Phone: +91 98765 43210", 200, 39, { align: "right" });
 
-    // ✅ Customer Info
+    // === Divider line ===
+    doc.setDrawColor(199, 21, 133);
+    doc.setLineWidth(1);
+    doc.line(10, 45, 200, 45);
+
+    // === Invoice Title ===
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text("Customer Details", 15, 105);
+    doc.setFontSize(16);
+    doc.setTextColor(199, 21, 133);
+    doc.text("INVOICE", 105, 55, { align: "center" });
+
+    // === Order Details ===
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(60, 60, 60);
+    doc.text(`Order ID: ${orderId}`, 10, 65);
+    doc.text(`Tracking ID: ${trackingId}`, 10, 71);
+    doc.text(`Transaction ID: ${transactionId || "-"}`, 10, 77);
+    doc.text(`Payment Method: ${paymentMethod || "-"}`, 10, 83);
+
+    // === BILL TO Box ===
+    doc.setFillColor(255, 182, 193); // Darker light pink
+    doc.roundedRect(10, 91, 90, 40, 3, 3, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(199, 21, 133);
+    doc.text("BILL TO:", 12, 97);
 
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
-    doc.text(`Name: ${userDetails?.name || "N/A"}`, 15, 113);
-    doc.text(`Address: ${userDetails?.address || "N/A"}`, 15, 121);
-    doc.text(`City: ${userDetails?.city || "N/A"}`, 15, 129);
-    doc.text(`Email: ${userDetails?.email || "N/A"}`, 15, 137);
-    doc.text(`Phone: ${userDetails?.phone || "N/A"}`, 15, 145);
+    doc.setFontSize(11);
+    doc.setTextColor(60, 60, 60);
+    doc.text(userDetails?.name || "N/A", 12, 103);
+    doc.text(userDetails?.address || "N/A", 12, 109);
+    doc.text(userDetails?.city || "N/A", 12, 115);
+    doc.text(userDetails?.email || "N/A", 12, 121);
+    doc.text(userDetails?.phone || "N/A", 12, 127);
 
-    // ✅ Order Table
-    doc.setFontSize(13);
-    doc.text("Order Items", 15, 160);
+    // === Product Table ===
     autoTable(doc, {
-      startY: 165,
+      startY: 141,
       head: [["Product", "Qty", "Price", "Total"]],
       body: items.map((item) => [
         item.product.name,
@@ -104,25 +115,31 @@ doc.addImage(logoBase64, "JPEG", 15, 15, 30, 30); // 30x30 fits into circle
         `${item.product.price}`,
         `${item.quantity * item.product.price}`,
       ]),
-      theme: "grid",
-      styles: {
-        font: "helvetica",
+      theme: "striped",
+      headStyles: {
+        fillColor: [199, 21, 133], // Dark pink header
+        textColor: [255, 255, 255],
         fontSize: 11,
-        halign: "center",
       },
-      headStyles: { fillColor: [255, 105, 180] }, // pink header
+      bodyStyles: { fontSize: 10, textColor: 60 },
+      alternateRowStyles: { fillColor: [255, 228, 232] },
+      styles: {
+        halign: "center",
+        cellPadding: 3,
+      },
     });
 
-    // ✅ Total Amount at Bottom
+    // === Total Amount ===
     const finalY = doc.lastAutoTable.finalY + 10;
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text(`Total Amount: ${total || 0}`, 15, finalY);
+    doc.setFontSize(13);
+    doc.setTextColor(199, 21, 133);
+    doc.text(`Total Amount: ${total || 0}`, 10, finalY);
 
-    // ✅ Footer
-    doc.setFontSize(10);
+    // === Footer ===
     doc.setFont("helvetica", "italic");
-    doc.setTextColor(100);
+    doc.setFontSize(10);
+    doc.setTextColor(120);
     doc.text(
       "Thank you for shopping with Tech Gadgets Store!",
       105,

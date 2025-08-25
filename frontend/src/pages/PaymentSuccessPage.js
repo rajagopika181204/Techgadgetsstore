@@ -21,7 +21,7 @@ const PaymentSuccessPage = () => {
 
   useEffect(() => {
     axios
-      .get("http://13.60.50.211/api/image-base64/bgimage.jpg")
+      .get("https://techgadgetsstore-backend.onrender.com/api/image-base64/bgimage.jpg")
       .then((res) => setBgImage(res.data.image))
       .catch((err) =>
         console.error("Background image load error (payment page):", err.message)

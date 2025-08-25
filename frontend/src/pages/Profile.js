@@ -15,7 +15,7 @@ function Base64Image({ filename, alt = "Image", className = "" }) {
 
   useEffect(() => {
     axios
-      .get(`http://13.60.50.211/api/image-base64/${filename}`)
+      .get(`https://techgadgetsstore-backend.onrender.com/api/image-base64/${filename}`)
       .then((res) => setImg(res.data.image))
       .catch((err) => {
         console.error("Image load error:", err);
@@ -45,8 +45,10 @@ const Profile = () => {
     const fetchOrders = async () => {
       try {
         const response = await fetch(
-          `http://13.60.50.211/api/order?email=${user?.email}`
+          `https://techgadgetsstore-backend.onrender.com/api/order?email=${user?.email}`
         );
+
+        
         const data = await response.json();
         setOrders(data);
       } catch (err) {

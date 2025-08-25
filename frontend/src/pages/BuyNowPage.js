@@ -19,7 +19,6 @@ import {
 // Navbar Component
 const Navbar = ({ onBack }) => {
   const navigate = useNavigate();
-
   return (
     <nav className="bg-gradient-to-r from-pink-600 to-pink-700 text-white py-4 px-6 shadow-md flex justify-between items-center">
       <div className="flex items-center">
@@ -77,61 +76,66 @@ const BuyNowPage = () => {
     qrVisible: false,
   });
 
-  const [items, setItems] = useState([]); // ✅ Fixed missing state
+  const [items, setItems] = useState([]);
+  const [bgImage, setBgImage] = useState(null);
 
-  // 🔥 Fetch base64 image for each product
+  // Fetch base64 images for products
   const fetchBase64Images = async (items) => {
     const updatedItems = await Promise.all(
       items.map(async (item) => {
         try {
           const res = await axios.get(
-            `http://13.60.50.211/api/image-base64/${item.product.image_url}`
+            `https://techgadgetsstore-backend.onrender.com/api/image-base64/${item.product.image_url}`
           );
           return {
             ...item,
-            product: {
-              ...item.product,
-              base64Image: res.data.image,
-            },
+            product: { ...item.product, base64Image: res.data.image },
           };
         } catch (err) {
           console.error("Image fetch error:", err);
           return item;
         }
       })
-      
     );
     return updatedItems;
   };
-// ✅ Background image base64
-  const [bgImage, setBgImage] = useState(null);
 
+  // Fetch background image
   useEffect(() => {
     axios
-      .get("http://13.60.50.211/api/image-base64/bgimage.jpg")
+      .get("https://techgadgetsstore-backend.onrender.com/api/image-base64/bgimage.jpg")
       .then((res) => setBgImage(res.data.image))
       .catch((err) =>
         console.error("Background image load error:", err.message)
       );
   }, []);
+
+  // Prepare items with base64 images
   useEffect(() => {
     const prepareItems = async () => {
       const baseItems = cartDetails || (product ? [{ product, quantity }] : []);
       const withImages = await fetchBase64Images(baseItems);
-      setItems(withImages); // ✅ Now setItems will not throw error
+      setItems(withImages);
     };
     prepareItems();
   }, [product, quantity, cartDetails]);
 
+  // Fetch saved addresses safely
   useEffect(() => {
     const fetchAddresses = async () => {
       if (!user?.email) return;
       try {
-        const res = await axios.get(`http://13.60.50.211/api/address/${user.email}`);
+        const res = await axios.get(
+          `https://techgadgetsstore-backend.onrender.com/api/address/${user.email}`
+        );
         if (res.data.success) {
-          setSavedAddresses(
-            Array.isArray(res.data.address) ? res.data.address : [res.data.address]
-          );
+          // Convert to array and filter out invalid addresses
+          const addresses = Array.isArray(res.data.address)
+            ? res.data.address
+            : res.data.address
+            ? [res.data.address]
+            : [];
+          setSavedAddresses(addresses.filter((a) => a && a.id));
         }
       } catch (err) {
         console.error("Fetch address error:", err);
@@ -148,6 +152,7 @@ const BuyNowPage = () => {
   };
 
   const handleAddressSelect = (address) => {
+    if (!address || !address.id) return;
     setSelectedAddress(address.id);
     setUserDetails({ ...userDetails, ...address });
   };
@@ -158,9 +163,12 @@ const BuyNowPage = () => {
       return;
     }
     try {
-      const res = await axios.post("http://13.60.50.211/api/save-address", userDetails);
-      if (res.data.success) {
-        setSavedAddresses([res.data.address]);
+      const res = await axios.post(
+        "https://techgadgetsstore-backend.onrender.com/api/save-address",
+        userDetails
+      );
+      if (res.data.success && res.data.address) {
+        setSavedAddresses((prev) => [...prev, res.data.address]);
         setShowNewAddressForm(false);
         toast.success("Address saved!");
       }
@@ -170,22 +178,25 @@ const BuyNowPage = () => {
   };
 
   const handleGenerateUPI = async () => {
-    try {
-      const res = await axios.post("http://13.60.50.211/api/generate-upi-link", {
-        amount: calculatedTotal,
-        orderId: `ORDER_${Date.now()}`,
-      });
-      setUpiPayment({
-        show: true,
-        link: res.data.upiLink,
-        qrData: res.data.qrData,
-        qrVisible: false,
-      });
-      toast.success("UPI Payment Link Generated!");
-    } catch (err) {
-      toast.error("Failed to generate UPI link");
-    }
-  };
+  try {
+    const res = await axios.post(
+      "https://techgadgetsstore-backend.onrender.com/api/generate-upi-link",
+      { amount: calculatedTotal, orderId: `ORDER_${Date.now()}` }
+    );
+    console.log("UPI response:", res.data); // ✅ log backend response
+    setUpiPayment({
+      show: true,
+      link: res.data.upiLink,
+      qrData: res.data.qrData,
+      qrVisible: false,
+    });
+    toast.success("UPI Payment Link Generated!");
+  } catch (err) {
+    console.error("UPI generation error:", err.response?.data || err.message);
+    toast.error("Failed to generate UPI link");
+  }
+};
+
 
   const handlePlaceOrder = async () => {
     const orderId = `ORDER_${Date.now()}`;
@@ -211,9 +222,9 @@ const BuyNowPage = () => {
 
     if (userDetails.paymentMethod === "razorpay") {
       if (!window.Razorpay) {
-      toast.error("Payment failed. Check your connection and try again.");
-      return;
-    }
+        toast.error("Payment failed. Check your connection and try again.");
+        return;
+      }
       const options = {
         key: "rzp_test_EH1UEwLILEPXCj",
         amount: calculatedTotal * 100,
@@ -240,41 +251,13 @@ const BuyNowPage = () => {
       };
       const razorpay = new window.Razorpay(options);
       razorpay.open();
-    }else {
-        setTimeout(() => {
-      navigate("/payment-success", {
-        state: {
-          orderId,
-          trackingId,
-          transactionId,
-          userDetails,
-          items,
-          total: calculatedTotal,
-          paymentMethod: userDetails.paymentMethod,
-        },
-      });
-      }, 3000); 
-    }
-
-    try {
-      const transactionId =
-        userDetails.paymentMethod === "upi"  ? `TXN${Date.now()}` : null;
-      const response = await axios.post("http://13.60.50.211/api/orders", {
-        items,
-        userDetails,
-        total: calculatedTotal,
-        paymentMethod: userDetails.paymentMethod,
-        transactionId,
-      });
-      if (response.data && response.data.orderId) {
-      toast.success("Order placed!");
-
+    } else {
       setTimeout(() => {
         navigate("/payment-success", {
           state: {
-            orderId: response.data.orderId,
-            trackingId: response.data.trackingId,
-            transactionId: response.data.transactionId,
+            orderId,
+            trackingId,
+            transactionId,
             userDetails,
             items,
             total: calculatedTotal,
@@ -282,10 +265,39 @@ const BuyNowPage = () => {
           },
         });
       }, 3000);
-    } 
-  }catch (err) {
+    }
+
+    try {
+      const txnId = userDetails.paymentMethod === "upi" ? `TXN${Date.now()}` : null;
+      const response = await axios.post(
+        "https://techgadgetsstore-backend.onrender.com/api/orders",
+        {
+          items,
+          userDetails,
+          total: calculatedTotal,
+          paymentMethod: userDetails.paymentMethod,
+          transactionId: txnId,
+        }
+      );
+      if (response.data && response.data.orderId) {
+        toast.success("Order placed!");
+        setTimeout(() => {
+          navigate("/payment-success", {
+            state: {
+              orderId: response.data.orderId,
+              trackingId: response.data.trackingId,
+              transactionId: response.data.transactionId,
+              userDetails,
+              items,
+              total: calculatedTotal,
+              paymentMethod: userDetails.paymentMethod,
+            },
+          });
+        }, 3000);
+      }
+    } catch (err) {
       console.error("Order Placement Error:", err.response?.data || err.message);
-      toast.success("Order Placed Successfully!.");
+      toast.success("Order Placed Successfully!");
     }
   };
 
@@ -330,26 +342,30 @@ const BuyNowPage = () => {
         {/* Address Form */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
           <h2 className="text-xl font-semibold mb-4">Delivery Address 📦</h2>
-          {savedAddresses.map((address) => (
-            <div
-              key={address.id}
-              onClick={() => handleAddressSelect(address)}
-              className={`p-4 border rounded-lg mb-4 cursor-pointer ${
-                selectedAddress === address.id
-                  ? "bg-pink-100 border-pink-400"
-                  : "border-gray-300"
-              }`}
-            >
-              <input
-                type="radio"
-                checked={selectedAddress === address.id}
-                onChange={() => handleAddressSelect(address)}
-                className="mr-2"
-              />
-              <strong>{address.name}</strong> — {address.address}, {address.city},{" "}
-              {address.pincode} (Phone: {address.phone})
-            </div>
-          ))}
+          {savedAddresses.length > 0 &&
+            savedAddresses.map(
+              (address) =>
+                address && (
+                  <div
+                    key={address.id}
+                    onClick={() => handleAddressSelect(address)}
+                    className={`p-4 border rounded-lg mb-4 cursor-pointer ${
+                      selectedAddress === address.id
+                        ? "bg-pink-100 border-pink-400"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      checked={selectedAddress === address.id}
+                      onChange={() => handleAddressSelect(address)}
+                      className="mr-2"
+                    />
+                    <strong>{address.name}</strong> — {address.address}, {address.city},{" "}
+                    {address.pincode} (Phone: {address.phone})
+                  </div>
+                )
+            )}
           <button
             onClick={() => setShowNewAddressForm(true)}
             className="mt-4 px-4 py-2 bg-pink-600 text-white rounded"
@@ -390,50 +406,22 @@ const BuyNowPage = () => {
         {/* Payment Section */}
         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
           <h2 className="text-xl font-semibold mb-4">
-             <FaCreditCard className="inline-block mr-2" /> Payment Method
-             </h2>
+            <FaCreditCard className="inline-block mr-2" /> Payment Method
+          </h2>
           <select
             name="paymentMethod"
             value={userDetails.paymentMethod}
             onChange={handleInputChange}
             className="w-full p-3 border rounded-lg"
           >
-            <option value="creditCard">Credit Card</option>
-            <option value="upi">UPI</option>
-            <option value="razorpay">Razorpay</option>
+           
+            <option value="razorpay">Online Payment</option>
             <option value="cashOnDelivery">Cash on Delivery</option>
           </select>
         </div>
-        
-        {/* UPI Payment */}
-        {userDetails.paymentMethod === "upi" && (
-          <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-            <button
-              onClick={handleGenerateUPI}
-              className="w-full px-5 py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg hover:shadow-lg transition mb-4"
-            >
-              <FaRupeeSign className="inline-block mr-2" /> Generate UPI Payment Link
-            </button>
-            {upiPayment.show && (
-              <div>
-                
-                <button
-                  onClick={() =>
-                    setUpiPayment((prev) => ({ ...prev, qrVisible: true }))
-                  }
-                  className="w-full px-5 py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg hover:shadow-lg transition"
-                >
-                  <FaQrcode className="inline-block mr-2" /> Show QR Code
-                </button>
-                {upiPayment.qrVisible && (
-                  <div className="flex justify-center mt-4">
-                    <QRCodeSVG value={upiPayment.qrData} size={150} />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+
+       
+
         <button
           onClick={handlePlaceOrder}
           className="w-full px-5 py-3 bg-green-600 text-white rounded-lg"

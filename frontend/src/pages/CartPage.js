@@ -11,13 +11,14 @@ import {
   FaBars,
 } from "react-icons/fa";
 import axios from "axios";
+
 // ✅ Base64 Background Image Component
 function Base64Background({ filename }) {
   const [img, setImg] = useState(null);
 
   useEffect(() => {
     axios
-      .get(`http://13.60.50.211/api/image-base64/${filename}`)
+      .get(`https://techgadgetsstore-backend.onrender.com/api/image-base64/${filename}`)
       .then((res) => setImg(res.data.image))
       .catch((err) => console.error("Image load error:", err));
   }, [filename]);
@@ -31,19 +32,20 @@ function Base64Background({ filename }) {
   ) : null;
 }
 
-// 🔥 Base64 Image Component
+// ✅ Base64 Image Component
 function Base64Image({ filename, alt, className }) {
   const [img, setImg] = useState(null);
 
   useEffect(() => {
+    if (!filename) return; // avoid crash if no image
     axios
-      .get(`http://13.60.50.211/api/image-base64/${filename}`)
+      .get(`https://techgadgetsstore-backend.onrender.com/api/image-base64/${filename}`)
       .then((res) => setImg(res.data.image))
       .catch((err) => console.error("Image load error:", err));
   }, [filename]);
 
   return img ? (
-    <img src={img} alt={alt} className={className} />
+    <img src={img} alt={alt || "Product"} className={className} />
   ) : (
     <div className="w-48 h-48 bg-gray-100 flex items-center justify-center">
       Loading...
@@ -57,6 +59,7 @@ function CartPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
+  // ✅ show "cart restored" message
   useEffect(() => {
     if (cartItems.length > 0) {
       setIsCartRestored(true);
@@ -64,28 +67,31 @@ function CartPage() {
     }
   }, [cartItems.length]);
 
+  // ✅ safe total price calculation
   const totalPrice = cartItems.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) =>
+      sum + ((item?.product?.price || 0) * (item?.quantity || 0)),
     0
   );
 
   const handleBuyNow = (item) => {
+    if (!item?.product) return;
     navigate("/buy-now", {
-      state: { product: item.product, quantity: item.quantity },
+      state: { product: item.product, quantity: item.quantity || 1 },
     });
   };
 
   const handleBuyAll = () => {
     if (cartItems.length === 0) {
-      toast.success("Your cart is empty. Add products to proceed.");
+      toast.info("Your cart is empty. Add products to proceed.");
       return;
     }
 
     navigate("/buy-now", {
       state: {
         cartDetails: cartItems.map((item) => ({
-          product: item.product,
-          quantity: item.quantity,
+          product: item?.product,
+          quantity: item?.quantity || 1,
         })),
         totalPrice,
       },
@@ -96,10 +102,10 @@ function CartPage() {
     <div className="relative font-sans min-h-screen flex flex-col overflow-hidden">
       {/* ✅ Background */}
       <Base64Background filename="bgimage.jpg" />
-    
+
       <ToastContainer />
 
-      {/* Responsive Navbar */}
+      {/* ✅ Navbar */}
       <nav className="bg-pink-600 text-white py-4 px-6 shadow-lg fixed top-0 left-0 w-full z-50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -140,7 +146,7 @@ function CartPage() {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* ✅ Mobile Menu */}
         {menuOpen && (
           <div className="md:hidden mt-4 flex flex-col gap-3">
             <button
@@ -165,13 +171,14 @@ function CartPage() {
         )}
       </nav>
 
-      {/* Cart Section */}
+      {/* ✅ Cart Section */}
       <div className="container mx-auto px-4 pt-28">
         {isCartRestored && (
           <div className="bg-green-500 text-white text-center py-3 rounded-lg mb-4 animate-bounce">
             Cart restored successfully!
           </div>
         )}
+
         <h1 className="text-4xl font-extrabold text-center text-gray-800 mb-8 drop-shadow-lg">
           My Cart 🛒
         </h1>
@@ -189,19 +196,19 @@ function CartPage() {
                   className="flex flex-col items-center border border-gray-200 rounded-lg p-4 gap-4 shadow-lg transform hover:scale-105 transition-transform duration-300"
                 >
                   <Base64Image
-                    filename={item.product.image_url}
-                    alt={item.product.name}
+                    filename={item?.product?.image_url}
+                    alt={item?.product?.name || "Product"}
                     className="w-48 h-48 object-cover rounded-xl"
                   />
                   <div className="text-center">
                     <h2 className="text-xl font-bold text-gray-800">
-                      {item.product.name}
+                      {item?.product?.name || "Unknown Product"}
                     </h2>
                     <p className="text-gray-600 mt-2">
-                      Quantity: <strong>{item.quantity}</strong>
+                      Quantity: <strong>{item?.quantity || 0}</strong>
                     </p>
                     <p className="text-pink-700 font-bold mt-1">
-                      Price: ₹{item.product.price * item.quantity}
+                      Price: ₹{(item?.product?.price || 0) * (item?.quantity || 0)}
                     </p>
                   </div>
                   <div className="flex flex-col gap-2">
@@ -212,7 +219,7 @@ function CartPage() {
                       Buy Now
                     </button>
                     <button
-                      onClick={() => removeFromCart(item.product.id)}
+                      onClick={() => removeFromCart(item?.product?.id)}
                       className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600"
                     >
                       Remove

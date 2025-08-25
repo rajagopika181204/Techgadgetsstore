@@ -11,7 +11,7 @@ function Base64Image({ filename, alt = "", className = "" }) {
 
   useEffect(() => {
     axios
-      .get(`http://13.60.50.211/api/image-base64/${filename}`)
+      .get(`https://techgadgetsstore-backend.onrender.com/api/image-base64/${filename}`)
       .then((res) => setImg(res.data.image))
       .catch((err) => console.error("Image load error:", err));
   }, [filename]);
@@ -28,7 +28,7 @@ function Signup() {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://13.60.50.211/signup", {
+      const res = await axios.post("https://techgadgetsstore-backend.onrender.com/signup", {
         username,
         email,
         password,

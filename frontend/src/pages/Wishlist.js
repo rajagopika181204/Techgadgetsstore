@@ -15,7 +15,7 @@ function Base64Image({ filename, alt = "", className = "" }) {
 
   useEffect(() => {
     axios
-      .get(`http://13.60.50.211/api/image-base64/${filename}`)
+      .get(`http://localhost:5000/api/image-base64/${filename}`)
       .then((res) => setImg(res.data.image))
       .catch((err) => console.error("Image load error:", err));
   }, [filename]);
@@ -33,7 +33,7 @@ function Base64Background({ filename }) {
 
   useEffect(() => {
     axios
-      .get(`http://13.60.50.211/api/image-base64/${filename}`)
+      .get(`http://localhost:5000/api/image-base64/${filename}`)
       .then((res) => setImg(res.data.image))
       .catch((err) => console.error("Image load error:", err));
   }, [filename]);
@@ -58,7 +58,7 @@ const Wishlist = () => {
 
   useEffect(() => {
     axios
-      .get("http://13.60.50.211/products")
+      .get("https://techgadgetsstore-backend.onrender.com/products")
       .then((res) => setProducts(res.data))
       .catch((err) => console.error(err));
   }, []);
@@ -191,3 +191,5 @@ const Wishlist = () => {
 };
 
 export default Wishlist;
+
+
