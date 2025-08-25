@@ -63,7 +63,7 @@ const BuyNowPage = () => {
     email: user?.email || "",
     pincode: "",
     phone: "",
-    paymentMethod: "creditCard",
+    paymentMethod: "cash on delivery",
   });
 
   const [savedAddresses, setSavedAddresses] = useState([]);
@@ -414,14 +414,10 @@ const BuyNowPage = () => {
             onChange={handleInputChange}
             className="w-full p-3 border rounded-lg"
           >
-           
-            <option value="razorpay">Online Payment</option>
             <option value="cashOnDelivery">Cash on Delivery</option>
+            <option value="razorpay">Online Payment</option>
           </select>
         </div>
-
-       
-
         <button
           onClick={handlePlaceOrder}
           className="w-full px-5 py-3 bg-green-600 text-white rounded-lg"
